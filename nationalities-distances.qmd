@@ -34,8 +34,8 @@ df_ports <- left_join(ports_normalized, port_lon_lat, by = "port2") %>%
 ```
 
 ```{r}
-#| warning: false
-#| message: false
+#| warning: true
+#| message: true
 
 source(here("scripts/load-voyages.R"))
 

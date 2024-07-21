@@ -9,7 +9,9 @@ book:
   chapters:
     - "index.qmd"
     - "nationalities-distances.qmd"
-    # - "p2.qmd"
+    - "voyage-maps.qmd"
+    - "voyage-tables.qmd"
+    - "notes.qmd"
   page-footer: 
     center: "Copyright 2024 by [Daniel Moul](https://dmoul.github.io). License: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/)"
     background: dark
@@ -18,6 +20,7 @@ license: "CC BY"
   
 execute: 
   freeze: auto # re-render only when source changes
+  warning: false
 
 format:
   html:

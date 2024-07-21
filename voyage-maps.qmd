@@ -1,0 +1,746 @@
+# Voyage maps
+
+```{r}
+#| label: setup
+#| warning: false
+#| message: false
+
+source(here::here("scripts/setup.R"))
+
+sf_use_s2(FALSE)
+
+```
+
+```{r}
+#| label: load-port-data
+
+ports_normalized <- read_csv(here("data/ports-enriched4.csv"),
+                             show_col_types = FALSE) %>%
+  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) |>
+  arrange(port2, country, level2) |>
+  fill(country, .direction = "down") |>
+  distinct(port2, country, level2, direction, port, .keep_all = TRUE)
+port_lon_lat <- read_csv(here("data/port_lon_lat.csv"),
+                         show_col_types = FALSE) %>%
+  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) %>%
+  filter(!is.na(port2))
+df_ports <- left_join(ports_normalized, port_lon_lat, by = "port2") %>%
+  mutate_if(is.character, ~map_chr(.x, iconv, "UTF-8", "UTF-8", sub='')) %>% # just in case
+  mutate(level2 = coalesce(level2.x, level2.y),
+         country = coalesce(country.x, country.y)) %>%
+  select(-ends_with(c(".x", ".y")))
+
+```
+
+```{r}
+#| label: create-world-and-water
+
+# World map example from https://www.simoncoulombe.com/2020/11/animated-ships/
+  
+world <- rnaturalearth::ne_countries(scale='medium',returnclass = 'sf') %>%
+  st_transform(crs = my_proj)
+
+# create water polygon for background 
+lats <- c(90:-90, -90:90, 90)
+longs <- c(rep(c(180, -180), each = 181), 180)
+water_outline <- 
+  list(cbind(longs, lats)) %>%
+  st_polygon() %>%
+  st_sfc(crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs") %>% 
+  st_sf() %>%
+  st_transform(crs = my_proj)
+
+```
+
+```{r}
+#| warning: false
+#| message: false
+
+source(here("scripts/load-voyages.R"))
+
+source(here("scripts/plot-voyages-functions.R"))
+
+```
+
+## Voyages to or from Virginia ("Hampton Road")
+
+British ships made most of the voyages to Virginia in this data set; Dutch ships made a few. We see a pattern in the routes between
+the Mid-Atlantic coast and Northern Europe, due to the [prevailing winds](https://en.wikipedia.org/wiki/Prevailing_winds): when
+leaving Europe, south near the Azores or Canary Islands then west across the Atlantic; when leaving North America: a more northerly
+path.
+
+For tabular data see [Hampton Road]
+
+<br>
+
+```{r}
+#| label: fig-hamton-road
+#| fig-cap: "Voyages to or from Hampton Roads, Virginia"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+voyage_list <- df_voyages %>% 
+               filter(port_from == "hampton road" | port_to == "hampton road")
+
+plot_voyages(ships = voyage_list$ShipName,
+             from = "hampton road",
+             to = "hampton road"
+)
+```
+
+<br>
+
+Looking at the same voyages by year, we see nearly the whole time period represented.
+
+<br>
+
+```{r}
+#| label: fig-hamton-road-by-year
+#| fig-cap: "Voyages to or from Hampton Roads, Virginia, by year"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(ships = voyage_list$ShipName,
+             from = "hampton road",
+             to = "hampton road",
+             color_var = "year"
+)
+
+```
+
+<br>
+
+## Voyages between US and Netherlands
+
+Our data set includes Dutch voyages from Boston, New York, and Virginia. All occurred after US independence--the first one directly after.
+
+Also see table at [US and Netherlands].
+
+<br>
+
+```{r between-us-netherlands, out.width="100%", echo = TRUE}
+#| label: between-us-netherlands
+#| fig-cap: "Voyages between the U.S. and Netherlands"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+ship_list <- 
+  c(df_voyages %>% 
+      filter(country_from == "united states" & country_to == "netherlands") %>%
+      pull(ShipName),
+    df_voyages %>%
+      filter(country_from == "netherlands" & country_to == "united states") %>%
+      pull(ShipName)
+  )
+
+plot_voyages(ships = ship_list)
+plot_voyages(ships = ship_list,
+             color_var = "year")
+
+```
+
+<br>
+
+## Voyages between US and France
+
+These voyages occurred in the final months of the American Revolutionary War in 1783 and afterwards.
+
+<br>
+
+```{r}
+#| label: between-us-france
+#| fig-cap: "Voyages between the U.S. and France"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+ship_list <- 
+  c(df_voyages %>% 
+      filter(country_from == "united states" & country_to == "france") %>%
+      pull(ShipName),
+    df_voyages %>%
+      filter(country_from == "france" & country_to == "united states") %>%
+      pull(ShipName)
+  )
+
+plot_voyages(ships = ship_list)
+
+plot_voyages(ships = ship_list,
+             color_var = "year")
+
+```
+
+<br>
+
+## Voyages between Canada and France
+
+Most French voyages occurred before or during the [Seven Years War](https://en.wikipedia.org/wiki/Seven_Years%27_War), after which France's territorial holdings in North America were limited to the small islands of [St Pierre and
+Miquelon](https://en.wikipedia.org/wiki/Saint_Pierre_and_Miquelon). They remain a part of France today.
+
+See also table [Canada and France]
+
+<br>
+
+```{r}
+#| label: between-canada-france
+#| fig-cap: "Voyages between Canada and France"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+ship_list <- 
+  c(df_voyages %>% 
+      filter(country_from == "canada" & country_to == "france") %>%
+      pull(ShipName),
+    df_voyages %>%
+      filter(country_from == "france" & country_to == "canada") %>%
+      pull(ShipName)
+  )
+
+plot_voyages(ships = ship_list,
+             color_var = "year")
+
+```
+
+<br>
+
+## Voyages to or from Florida
+
+[St. Augustine](https://en.wikipedia.org/wiki/St._Augustine,_Florida) was founded in 1565 by Spanish explorers and has been
+inhabited continuously since then--the longest of any city in the continental US. It became the capital of British East Florida in
+1763, returned to Spanish control in 1783, then Spain ceded it to the USA in 1819. Our data set includes only British voyages.
+
+Also see table [Florida].
+
+<br>
+
+```{r}
+#| label: to-from-florida
+#| fig-cap: "Voyages to or from Florida"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(
+  from = filter(df_ports, level2 == "florida") %>% pull(port2),
+  to = filter(df_ports, level2 == "florida") %>% pull(port2),
+  color_var = "year"
+)
+
+```
+
+<br>
+
+```{r}
+
+```
+
+## All voyages of ships that went to to or from Florida at least once
+
+Looking at all the voyages in our data set undertaken by ships that traveled from or to Florida, we see a much wider web going as
+far as India, Ceylon (now Sri Lanka), Malaysia, and the Dutch East Indies (now Indonesia and nearby island nations). These
+`r nrow(distinct(voyage_list, ShipName))` ships were part of the British Royal Navy.
+
+<br>
+
+```{r florida2-year, out.width="100%", echo = TRUE}
+#| label: to-from-florida-all-ships
+#| fig-cap: "All voyages of ships that went to or from Florida at least once"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+voyage_list <- df_voyages %>% 
+               filter(str_detect(port_to, "florida") | str_detect(port_from, "florida"))
+
+plot_voyages(ships = voyage_list$ShipName,
+             color_var = "year")
+
+```
+
+<br>
+
+## Veracruz, Mexico
+
+The primary port in the Spanish colony of Mexico was Veracruz. Cuba was settled earlier and remained a regional center in this time
+period.
+
+<br>
+
+```{r}
+#| label: mexico-eastcoast
+#| fig-cap: "All voyages to or from Veracruz, Mexico"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(to = "veracruz")
+plot_voyages(to = "veracruz", color_var = "year")
+plot_voyages(from = "veracruz")
+plot_voyages(from = "veracruz", color_var = "year")
+
+```
+
+## Explorations of the northwest coast of North America
+
+Our data set includes Spanish, British and French voyages of discovery along the western coast of North America. The Spanish went
+further south; the British, further north.
+
+-   The historic [La Boussole](https://en.wikipedia.org/wiki/French_ship_Boussole_(1781)) ("the compass") captained by
+    [Jean-François de Galaup, comte de Lapérouse](https://en.wikipedia.org/wiki/Jean-François_de_Galaup,_comte_de_Lapérouse), which
+    disappeared after leaving Botany Bay in 1788.
+-   The first [HMS Queen Charlotte](https://en.wikipedia.org/wiki/HMS_Queen_Charlotte), launched in 1790 and sank in 1800.
+-   The Spanish
+    [Aranzazu](https://text-message.blogs.archives.gov/2017/10/19/establishing-and-disbanding-the-neah-bay-settlement-1792/) which
+    was looking for the rumored northwest passage. For more background to Spanish aims, activities, and rivalry with the British in
+    the American Northwest, see
+    [here](https://text-message.blogs.archives.gov/2017/10/12/225-years-ago-spanish-explorations-of-the-pacific-northwest-and-the-first-spanish-settlement-in-washington-state-nunez-gaona-neah-bay-1792-part-ii-spanish-explorations-of-the-pacific-northwest-a/).
+
+See also table [Northwest America]
+
+<br>
+
+```{r}
+#| label: nw-north-america
+#| fig-cap: "All voyages to or from the US Coastal Northwest"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+nw_explorers <- 
+  get_voyage_details(range_lon = c(-170, -100),
+                     range_lat = c(15, 90)
+                     )
+
+plot_voyages(ships = nw_explorers$ShipName,
+             range_lon = c(-170, -100),
+             range_lat = c(15, 90)
+)
+
+plot_voyages(ships = nw_explorers$ShipName,
+             range_lon = c(-170, -100),
+             range_lat = c(15, 90),
+             color_var = "year")
+
+```
+
+<br>
+
+## James Cook's first and second voyages of discovery
+
+Our data set includes portions of [James Cook's](https://en.wikipedia.org/wiki/James_Cook) first circumnavigation westward for the
+purpose of observing the [1769 transit of Venus in Tahiti](https://en.wikipedia.org/wiki/1769_transit_of_Venus_observed_from_Tahiti)
+and then searching for unknown land to the south, [Terra Astralis, Incognita](https://en.wikipedia.org/wiki/Terra_Australis),
+believed to exist further south than Australia, which was then called New Holland. On this journey he landed in Australia at a place
+he named [Botany Bay](https://en.wikipedia.org/wiki/Botany_Bay) in present-day Sydney. Our records include portions of Cook's second
+voyage from Britain eastward to New Zealand and eventually around the South American cape and back to Britain. He never found
+Antarctica, despite coming close, and his experience convinced people that Terra Astralis, Incognita did not exist.
+
+See also table [James Cook's journeys]
+
+<br>
+
+```{r}
+#| label: cook
+#| fig-cap: "James Cook's voyages in the data set"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+ship_list <- c("ENDEAVOUR", "RESOLUTION")
+cooks_first_journey <- c("1768-01-01", "1771-12-31")
+cooks_second_journey <- c("1772-01-01", "1775-12-31")
+
+plot_voyages(ships = ship_list,
+             range_dates = cooks_first_journey,
+             color_var = "year"
+)
+
+plot_voyages(ships = ship_list,
+             range_dates = cooks_second_journey,
+             color_var = "year"
+)
+
+```
+
+## Maps: South America
+
+## To and or from Brazil, Uruguay, Argentina
+
+Most voyages in our data from or to South America we between to [Montevideo](https://en.wikipedia.org/wiki/Montevideo) and Spanish
+ports. Montevideo was Spain' primary naval base in this period. The trade from the interior via the [Río de la
+Plata](https://en.wikipedia.org/wiki/R%C3%ADo_de_la_Plata) (River Plate) passed through Montevideo or [Buenos
+Aires](https://en.wikipedia.org/wiki/Buenos_Aires), which sits on the opposite coast of the estuary.
+
+At least some of the British voyages likely contributed to the [Battle of Montevideo
+(1807)](https://en.wikipedia.org/wiki/Battle_of_Montevideo_(1807)) or its aftermath, when the British captured and held Montevideo
+for much of that year.
+
+The voyages to or from Spain occurred before or during the 1780s--well before British blockades of [Spanish
+ports](https://en.wikipedia.org/wiki/Cádiz) 1797-1893 and 1803-1808.
+
+To:
+
+<br>
+
+```{r}
+#| label: spanish-america
+#| fig-cap: "All voyages to or from Spanish America"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(to = df_voyages %>% 
+      filter(country_to %in% c("brazil", "uruguay", "argentina" ))  %>%
+      pull(port_to)
+      )
+
+plot_voyages(to = df_voyages %>% 
+      filter(country_to %in% c("brazil", "uruguay", "argentina" ))  %>%
+      pull(port_to),
+      color_var = "year"
+      )
+
+```
+
+<br>
+
+From:
+
+<br>
+
+```{r}
+#| label: from-spanish-america
+#| fig-cap: "All voyages from Spanish America"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(from = df_voyages %>% 
+      filter(country_from %in% c("brazil", "uruguay", "argentina" ))  %>%
+      pull(port_from)
+      )
+
+plot_voyages(from = df_voyages %>% 
+      filter(country_from %in% c("brazil", "uruguay", "argentina" ))  %>%
+      pull(port_from),
+      color_var = "year"
+      )
+
+```
+
+<br>
+
+## The challenge of rounding the Horn traveling west
+
+The track of the french ship La Boussole illustrates the difficulty [square-rigged](https://en.wikipedia.org/wiki/Square_rig) ships
+faced from storms and contrary winds.
+
+<br>
+
+```{r}
+#| label: around-horn-la-boussole
+#| fig-cap: "La Boussole's track around the horn of South America"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(from = df_voyages %>% 
+      filter(country_from %in% c("brazil"),
+             Nationality == "FRENCH")  %>%
+      pull(port_from),
+      ships = "LA BOUSSOLE"
+      )
+
+```
+
+```{r}
+#| label: whole-voyage-la-boussole
+#| fig-cap: "La Boussole's track around the horn of South America"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(
+      ships = "LA BOUSSOLE"
+      )
+
+```
+
+<br>
+
+## Maps: African Guinea
+
+## Triangular trade
+
+```{r}
+guinea_coast <- c("senegal", "guinea-bissau", "guinea", "sierra leone", "liberia", "ivory coast", "ghana", "togo", "benin", "nigeria", "cameroon", "equatorial guinea", "gabon")
+
+```
+
+In our data set: Dutch and British voyages before 1780 to [Guinea](https://en.wikipedia.org/wiki/Guinea_(region)), modern day
+`r glue_collapse(str_to_title(guinea_coast), sep = ", ", last = " and ")`. Most voyages were to/from slave trading posts or colonial
+fortresses. We see two parts of the [triangular trade](https://en.wikipedia.org/wiki/Triangular_trade) route: from Europe to Guinea,
+then to the Americas.
+
+<br>
+
+```{r}
+#| label: to-guinea-coast
+#| fig-cap: "Voyages to the Guinea coast"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(to = df_voyages %>% 
+      filter(country_to %in% guinea_coast)  %>%
+      pull(port_to),
+      range_lat = c(-35, 20)
+      )
+
+plot_voyages(to = df_voyages %>% 
+      filter(country_to %in% guinea_coast)  %>%
+      pull(port_to),
+      range_lat = c(-35, 20),
+      color_var = "year"
+      )
+
+```
+
+<br>
+
+```{r}
+#| label: from-guinea-coast
+#| fig-cap: "Voyages from the Guinea coast"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(from = df_voyages %>% 
+      filter(country_from %in% guinea_coast)  %>%
+      pull(port_from),
+      range_lat = c(-35, 20)
+      )
+
+plot_voyages(from = df_voyages %>% 
+      filter(country_from %in% guinea_coast)  %>%
+      pull(port_from),
+      range_lat = c(-35, 20),
+      color_var = "year"
+      )
+
+```
+
+<br>
+
+## Maps: India and Indonesia
+
+## To and from Penang, Malaysia
+
+Our data set includes 28 voyages to or from Penang. There are just enough to see patterns in the routes: leaving the UK for
+Malaysia, ships stayed near Africa, veered toward Brazil, then picked up the prevailing westerlies beyond 35 degrees South, perhaps
+taking advantage of the [Antarctic Circumpolar Current](https://en.wikipedia.org/wiki/Antarctic_Circumpolar_Current) as well.
+
+<br>
+
+```{r}
+#| label: to-penang
+#| fig-cap: "Voyages to Penang, Malaya"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(to = "penang")
+
+```
+
+<br>
+
+In contrast, when traveling the other direction, captains minimized the time they faced the prevailing westerlies, just barely
+rounding the Cape, then traveling much further into the north Atlantic before turning towards the UK.
+
+<br>
+
+```{r}
+#| label: from-penang
+#| fig-cap: "Voyages from Penang, Malaya"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+plot_voyages(from = "penang")
+
+```
+
+<br>
+
+## To and from India
+
+This pattern is clearer still the tracks to and from India.
+
+<br>
+
+```{r}
+#| label: to-india
+#| fig-cap: "Voyages to India"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(to = df_voyages %>%
+               filter(country_to == "india") %>%
+               pull(port_to)
+)
+
+plot_voyages(to = df_voyages %>%
+               filter(country_to == "india") %>%
+               pull(port_to),
+             color_var = "year"
+)
+
+```
+
+<br>
+
+From India
+
+<br>
+
+```{r from-india, out.width="100%", echo = TRUE}
+#| label: from-india
+#| fig-cap: "Voyages from India"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(from = df_voyages %>%
+               filter(country_from == "india") %>%
+               pull(port_from)
+)
+
+```
+
+<br>
+
+## To and from Indonesia
+
+The same pattern is largely true for ships going to and from Indonesia. Most were Dutch; the main difference in their route was
+staying near 40 degrees South longer on the way to Indonesia.
+
+<br>
+
+```{r}
+#| label: to-indonesia
+#| fig-cap: "Voyages to Indonesia"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(to = df_voyages %>%
+               filter(country_to == "indonesia") %>%
+               pull(port_to)
+)
+
+plot_voyages(to = df_voyages %>%
+               filter(country_to == "indonesia") %>%
+               pull(port_to),
+             color_var = "year"
+)
+
+```
+
+<br>
+
+From Indonesia
+
+<br>
+
+```{r}
+#| label: from-indonesia
+#| fig-cap: "Voyages from Indonesia"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+
+plot_voyages(from = df_voyages %>%
+               filter(country_from == "indonesia") %>%
+               pull(port_from)
+)
+
+plot_voyages(from = df_voyages %>%
+               filter(country_from == "indonesia") %>%
+               pull(port_from),
+             color_var = "year"
+)
+
+```
+
+<br>
+
+## To and from China (Hong Kong and Macau)
+
+This data set doesn't have many voyages to or from China.
+
+<br>
+
+```{r}
+#| label: to-china
+#| fig-cap: "Voyages to China"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(to = df_voyages %>% filter(country_to == "china") %>% pull(port_to))
+plot_voyages(to = df_voyages %>% filter(country_to == "china") %>% pull(port_to), color_var = "year")
+
+```
+
+```{r}
+#| label: from-china
+#| fig-cap: "Voyages from China"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+plot_voyages(from = df_voyages %>% filter(country_from == "china") %>% pull(port_from))
+plot_voyages(from = df_voyages %>% filter(country_from == "china") %>% pull(port_from), color_var = "year")
+
+```
+
+<br>
+
+## The Importance of Chronometers
+
+Perhaps you've noticed the unlikely number of horizontal tracks, for example, above when leaving Jakarta and traveling to western
+India or Yemen or ships approaching St Helena from the East. Ships would round the Cape and find the right latitude well to the east
+of St Helena. Then they could sail directly west to the island. Why? Because it's hard to find a small island in a big ocean, and
+until there were sufficiently accurate chronometers, it was much easier to calculate an accurate latitude than longitude. In the
+period of this data set, chronometer technology improved a lot, and one can see in the trend towards lesser safety margin in later
+years.
+
+<br>
+
+```{r}
+#| label: chronometers-st-helena
+#| fig-cap: "As chronometers got better, captains could assume more accurate logitude calculations"
+#| fig-height: 8
+#| fig-width: 10
+#| column: page-right
+
+voyage_list <- df_voyages %>%
+               filter(country_from == "india" & port_to == "st helena")
+
+plot_voyages(ships = voyage_list$ShipName,
+             from = voyage_list$port_from,
+             to = "st helena", 
+             range_lon = c(-10, 60),
+             range_lat = c(-44, -5),
+             color_var = "year"
+)
+
+```
+
+<br>

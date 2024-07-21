@@ -59,7 +59,7 @@ my_proj <- '+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=
 # Suppress summarise info
 options(dplyr.summarise.inform = FALSE)
 
-MIN_VOYAGE_DURATION <- 2
+MIN_VOYAGE_DURATION <- 2 # days
 
 define_flag_colors <- function() {
   ####### Define route colors

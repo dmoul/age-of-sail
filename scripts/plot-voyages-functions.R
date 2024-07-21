@@ -1,5 +1,39 @@
 # plot-voyages.R
 
+string_collapse_with_descriptor <- function(vec, n = 10, type_of_entity = NA) {
+  # INPUT: Vector of strings
+  # OUTPUT: Single string, with type of entity appended, if applicable
+  
+  string_collapse <- function(vec, n = 10) {
+    # INPUT: Vector of strings
+    # OUTPUT: Single string, converted to title case
+    # PRECONDITIONS: glue package loaded
+    
+    if(length(vec) <= n) {
+      glue_collapse(str_to_title(sort(vec)), sep = ", ", last = " and ")
+    } else {
+      len <- length(vec)
+      glue("{glue_collapse(str_to_title(head(sort(vec), n=n)), sep = ', ')} and {len - n} more")
+    }
+  }
+  
+  st <- string_collapse(vec, n)
+  
+  if(str_detect(st, "more$") & !is.na(type_of_entity)) {
+    st_return <- paste0(st, " ", type_of_entity)
+  } else {
+    st_return <- st
+  }
+  
+  st_return
+  
+}
+
+# test
+# vec <- c("hellevoetsluis", "middelburg", "texel", "rotterdam", "amsterdam", "den helder", "vlissingen")
+# n <- 4
+# string_collapse(vec, 3)
+
 
 ###### get_ship_observations function ######
 
@@ -25,32 +59,32 @@ get_voyage_details <- function(ports = NA, from = NA, to = NA, ships = NA,
   # silently drop bad function parameter values
   # Note: NA has length 1, and intersect doesn't seem to be consistent in setting either NA or null value
   ports <- intersect(ports, c(unique(df$port_from), unique(df$port_to)))
-  if ( length(ports) == 0 || is.na(ports)) {
+  if ( length(ports) == 0 | any(is.na(ports))) {
     ports <- character(0)
   }
   from <- intersect(from, unique(df$port_from))
-  if ( length(from) == 0 || is.na(from)) {
+  if ( length(from) == 0 | any(is.na(from))) {
     from <- character(0)
   }
   to <- intersect(to, unique(df$port_to))
-  if ( length(to) == 0 || is.na(to)) {
+  if ( length(to) == 0 | any(is.na(to))) {
     to <- character(0)
   }
   ships <- intersect(ships, c(unique(df$ShipName)))
-  if ( length(ships) == 0 || is.na(ships)) {
+  if ( length(ships) == 0 | any(is.na(ships))) {
     ships <- character(0)
   }
-  if ( length(range_dates) == 0 || is.na(range_dates)) {
+  if ( length(range_dates) == 0 | any(is.na(range_dates))) {
     range_dates <- double(0)
   } else {
     # TODO: add bounds checking and type checking here
   }
-  if ( length(range_lon) == 0 || is.na(range_lon)) {
+  if ( length(range_lon) == 0 | any(is.na(range_lon))) {
     range_lon <- double(0)
   } else {
     # TODO: add bounds checking here
   }
-  if ( length(range_lat) == 0 || is.na(range_lat)) {
+  if ( length(range_lat) == 0 | any(is.na(range_lat))) {
     range_lat <- double(0)
   } else {
     # TODO: add bounds checking here
@@ -92,7 +126,7 @@ get_voyage_details <- function(ports = NA, from = NA, to = NA, ships = NA,
     df <- df %>%
       filter(longitude >= min(range_lon) & longitude <= max(range_lon))
   } else {
-    if ( length(range_lon) != 0 ) { # || !is.na(range_lon)
+    if ( length(range_lon) != 0 ) { # | !is.na(range_lon)
       message("Warning: range_lon must be two numbers; ignoring range_lon",
               "\n  usage: plot_voyages(ports = NA, from = NA, to = NA, ships = NA, range_lon = NA, range_lat = NA, range_dates = NA)")
     }
@@ -101,7 +135,7 @@ get_voyage_details <- function(ports = NA, from = NA, to = NA, ships = NA,
     df <- df %>%
       filter(latitude >= min(range_lat) & latitude <= max(range_lat))
   } else {
-    if ( length(range_lat) != 0 ) { # || !is.na(range_lat)
+    if ( length(range_lat) != 0 ) { # | !is.na(range_lat)
       message("Warning: range_lat must be two numbers; ignoring range_lat",
               "\n  usage: plot_voyages(ports = NA, from = NA, to = NA, ships = NA, range_lon = NA, range_lat = NA, range_dates = NA)")
     }
@@ -111,7 +145,7 @@ get_voyage_details <- function(ports = NA, from = NA, to = NA, ships = NA,
     df <- df %>%
       filter(ObsDate >= min(ymd(range_dates)) & ObsDate <= max(ymd(range_dates)))
   } else {
-    if ( length(range_dates) != 0 ) { # || !is.na(range_lat)
+    if ( length(range_dates) != 0 ) { # | !is.na(range_lat)
       message("Warning: range_dates must be two dates; ignoring range_lat",
               "\n  usage: plot_voyages(ports = NA, from = NA, to = NA, ships = NA, range_lon = NA, range_lat = NA, range_dates = NA)")
     }
@@ -134,7 +168,7 @@ summarize_voyages <- function(ports = NA, from = NA, to = NA, ships = NA,
   
   df <- get_voyage_details(ports = ports, from = from, to = to, ships = ships, 
                            range_lon = range_lon, range_lat = range_lat, range_dates = range_dates)
-  if ( length(df) == 0 || is.na(df) ) {
+  if ( length(df) == 0 | any(is.na(df$ShipName)) ) {
     return()
   }
   
@@ -153,12 +187,14 @@ summarize_voyages <- function(ports = NA, from = NA, to = NA, ships = NA,
       source_note = glue("{nrow(distinct(my_tbl, ShipName))} ships and {nrow(my_tbl)} voyages;",
                          " ships from {nrow(distinct(my_tbl, Nationality))} nationalities")
     ) %>%
-    opt_table_font(
-      font = c(
-        "Arial Narrow",
-        default_fonts()
-      )
-    )
+    tab_options(table.font.names = c("Arial Narrow", default_fonts()),
+                table.font.size = 10)
+    # opt_table_font(
+    #   font = c(
+    #     "Arial Narrow",
+    #     default_fonts()
+    #   )
+    # )
  
     my_gt
   
@@ -181,8 +217,8 @@ plot_voyages <- function(ports = NA, from = NA, to = NA, ships = NA,
   
   ELEMENTS_TITLE_LENGTH <- 4
   ELEMENTS_CAPTION_LENGTH <- 10
-  WRAP_TITLE_LENGTH <- 40
-  WRAP_CAPTION_LENGTH <- 60
+  WRAP_TITLE_LENGTH <- 70 # 40
+  WRAP_CAPTION_LENGTH <- 120 # 60
   
   # test
   # ports = NA
@@ -193,53 +229,56 @@ plot_voyages <- function(ports = NA, from = NA, to = NA, ships = NA,
   # range_lat = NA
   # range_dates = NA
   # color_var = NA
+  # voyage_list <- df_voyages %>%
+  #   filter(port_from == "hampton road" | port_to == "hampton road")
   # ships = voyage_list$ShipName
   # from = "hampton road"
   # to = "hampton road"
   
-  
+
   # browser()
   
   df <- get_voyage_details(ports = ports, from = from, to = to, ships = ships, 
                            range_lon = range_lon, range_lat= range_lat, range_dates = range_dates)
-  if ( length(df) == 0 || is.na(df) ) {
+  
+  if ( length(df) == 0 | any(is.na(df$ShipName)) ) {
     return()
   }
   # if ( nrow(df) == 0 || is.na(df) ) {
   #   return()
   # }
-  
-  # repeat this here, so params are the right length
+
+    # repeat this here, so params are the right length
   # silently drop bad function parameter values
   # Note: NA has length 1, and intersect doesn't seem to be consistent in setting either NA or null value
   ports <- intersect(ports, c(unique(df$port_from), unique(df$port_to)))
-  if ( length(ports) == 0 || is.na(ports)) {
+  if ( length(ports) == 0 | any(is.na(ports))) {
     ports <- character(0)  # not sure why this is needed; it's not for ships
   }
   from <- intersect(from, unique(df$port_from))
-  if ( length(from) == 0 || is.na(from)) {
+  if ( length(from) == 0 | any(is.na(from))) {
     from <- character(0)  # not sure why this is needed; it's not for ships
   }
   to <- intersect(to, unique(df$port_to))
-  if ( length(to) == 0 || is.na(to)) {
+  if ( length(to) == 0 | any(is.na(to))) {
     to <- character(0)  # not sure why this is needed; it's not for ships
   }
   ships <- intersect(ships, c(unique(df$ShipName)))
-  if ( length(ships) == 0 || is.na(ships)) {
+  if ( length(ships) == 0 | any(is.na(ships))) {
     ships <- character(0)  # not sure why this is needed; it's not for ships
   }
   
-  if ( length(range_lon) == 0 || is.na(range_lon)) {
+  if ( length(range_lon) == 0 | any(is.na(range_lon))) {
     range_lon <- double(0)  # not sure why this is needed; it's not for ships
   } else {
     # TODO: add bounds checking here
   }
-  if ( length(range_lat) == 0 || is.na(range_lat)) {
+  if ( length(range_lat) == 0 | any(is.na(range_lat))) {
     range_lat <- double(0)  # not sure why this is needed; it's not for ships
   } else {
     # TODO: add bounds checking here
   }
-  if ( length(range_dates) == 0 || is.na(range_dates)) {
+  if ( length(range_dates) == 0 | any(is.na(range_dates))) {
     range_dates <- double(0)  # not sure why this is needed; it's not for ships
   } else {
     # TODO: add bounds checking and type checking here
@@ -263,28 +302,55 @@ plot_voyages <- function(ports = NA, from = NA, to = NA, ships = NA,
   
   ###### make plot strings ######
   
-  my_ship_string <- string_collapse(sort(unique(voyages_for_plot_temp$ShipName)), 
-                                    ELEMENTS_TITLE_LENGTH)
+  # TODO: the following aren't working with string_collapse_with_descriptor()
   
-  my_ports_string <- string_collapse(sort(unique(c(voyages_for_plot_temp$VoyageFrom, 
-                                                  voyages_for_plot_temp$VoyageTo))), 
-                                     ELEMENTS_CAPTION_LENGTH)
-  my_ports_from_string <- string_collapse(sort(unique(voyages_for_plot_temp$VoyageFrom)), 
-                                          ELEMENTS_TITLE_LENGTH)
-  my_ports_to_string <- string_collapse(sort(unique(voyages_for_plot_temp$VoyageTo)), 
-                                        ELEMENTS_TITLE_LENGTH)
+  my_ship_string <- string_collapse_with_descriptor(
+    sort(unique(voyages_for_plot_temp$ShipName)), 
+    ELEMENTS_TITLE_LENGTH,
+    type_of_entity = "ships"
+  )
   
-  my_port2_string <- string_collapse(sort(unique(c(voyages_for_plot_temp$port_from, 
-                                                   voyages_for_plot_temp$port_to))), 
-                                     ELEMENTS_TITLE_LENGTH)
-  my_port2_from_string <- string_collapse(sort(unique(voyages_for_plot_temp$port_from)), 
-                                          ELEMENTS_TITLE_LENGTH)
-  my_port2_to_string <- string_collapse(sort(unique(voyages_for_plot_temp$port_to)), 
-                                        ELEMENTS_TITLE_LENGTH)
+  my_ports_string <- string_collapse_with_descriptor(
+    sort(unique(c(voyages_for_plot_temp$VoyageFrom, 
+                  voyages_for_plot_temp$VoyageTo))), 
+    ELEMENTS_CAPTION_LENGTH,
+    type_of_entity = "ports"
+  )
+  
+  my_ports_from_string <- string_collapse_with_descriptor(
+    sort(unique(voyages_for_plot_temp$VoyageFrom)), 
+    ELEMENTS_TITLE_LENGTH,
+    type_of_entity = "ports"
+  )
+  
+  my_ports_to_string <- string_collapse_with_descriptor(
+    sort(unique(voyages_for_plot_temp$VoyageTo)), 
+    ELEMENTS_TITLE_LENGTH,
+    type_of_entity = "ports"
+  )
+  
+  my_port2_string <- string_collapse_with_descriptor(
+    sort(unique(c(voyages_for_plot_temp$port_from, 
+                  voyages_for_plot_temp$port_to))), 
+    ELEMENTS_TITLE_LENGTH,
+    type_of_entity = "ports"
+  )
+  
+  my_port2_from_string <- string_collapse_with_descriptor(
+    sort(unique(voyages_for_plot_temp$port_from)), 
+    ELEMENTS_TITLE_LENGTH, 
+    type_of_entity = "ports"
+  )
+  
+  my_port2_to_string <- string_collapse_with_descriptor(
+    sort(unique(voyages_for_plot_temp$port_to)), 
+    ELEMENTS_TITLE_LENGTH,
+    type_of_entity = "ports"
+  )
   
   my_title <- "Voyages"
   
-  if ( length(ships)  > 0 ) {
+  if ( length(ships) > 0 ) {
     my_title <- paste0(my_title, glue(" of {my_ship_string}"))
   }
   if ( length(ports) > 0 ) {
@@ -486,7 +552,7 @@ plot_voyages <- function(ports = NA, from = NA, to = NA, ships = NA,
     ) +
     labs(title = my_title,
          subtitle = glue("{nrow(distinct(as.data.frame(voyages_for_plot), ShipName, VoyageIni))} voyages",
-                         " starting {min(voyages_for_plot$VoyageIni)} to {max(voyages_for_plot$VoyageIni)}"),
+                         " {min(voyages_for_plot$VoyageIni)} to {max(voyages_for_plot$VoyageIni)}"), # removed "starting"
          color = NULL,
          fill = NULL,
          linetype = NULL,
@@ -502,13 +568,13 @@ plot_voyages <- function(ports = NA, from = NA, to = NA, ships = NA,
 # test
 # plot_voyages()
 
-voyage_list <- df_voyages %>% 
-  filter(port_from == "hampton road" | port_to == "hampton road")
-
-plot_voyages(ships = voyage_list$ShipName,
-             from = "hampton road",
-             to = "hampton road" 
-)
+# voyage_list <- df_voyages %>% 
+#   filter(port_from == "hampton road" | port_to == "hampton road")
+# 
+# plot_voyages(ships = voyage_list$ShipName,
+#              from = "hampton road",
+#              to = "hampton road" 
+# )
 
 # plot_voyages(ports = c("nouvelle hollande"))
 # plot_voyages(

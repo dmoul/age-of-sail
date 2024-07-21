@@ -1,0 +1,206 @@
+# Voyage tables
+
+```{r}
+#| label: setup
+#| warning: false
+#| message: false
+
+source(here::here("scripts/setup.R"))
+
+sf_use_s2(FALSE)
+
+```
+
+```{r}
+#| label: load-port-data
+
+ports_normalized <- read_csv(here("data/ports-enriched4.csv"),
+                             show_col_types = FALSE) %>%
+  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) |>
+  arrange(port2, country, level2) |>
+  fill(country, .direction = "down") |>
+  distinct(port2, country, level2, direction, port, .keep_all = TRUE)
+port_lon_lat <- read_csv(here("data/port_lon_lat.csv"),
+                         show_col_types = FALSE) %>%
+  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) %>%
+  filter(!is.na(port2))
+df_ports <- left_join(ports_normalized, port_lon_lat, by = "port2") %>%
+  mutate_if(is.character, ~map_chr(.x, iconv, "UTF-8", "UTF-8", sub='')) %>% # just in case
+  mutate(level2 = coalesce(level2.x, level2.y),
+         country = coalesce(country.x, country.y)) %>%
+  select(-ends_with(c(".x", ".y")))
+
+```
+
+```{r}
+#| label: create-world-and-water
+#| eval: false
+
+# World map example from https://www.simoncoulombe.com/2020/11/animated-ships/
+  
+world <- rnaturalearth::ne_countries(scale='medium',returnclass = 'sf') %>%
+  st_transform(crs = my_proj)
+
+# create water polygon for background 
+lats <- c(90:-90, -90:90, 90)
+longs <- c(rep(c(180, -180), each = 181), 180)
+water_outline <- 
+  list(cbind(longs, lats)) %>%
+  st_polygon() %>%
+  st_sfc(crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs") %>% 
+  st_sf() %>%
+  st_transform(crs = my_proj)
+
+```
+
+```{r}
+#| warning: false
+#| message: false
+
+source(here("scripts/load-voyages.R"))
+
+source(here("scripts/plot-voyages-functions.R"))
+
+```
+
+Below are selected data tables corresponding to some of the maps plotted earlier.
+
+## Hampton Roads
+
+Voyages to/from Hampton Roads ("hampton road") in table form. Column names are a subset of the variables in the data frame I used
+for plotting. Ones with capital letters were in the original data set; I added the ones in lower case.
+
+<br>
+
+```{r}
+#| label: tbl-hampton-road-by-year-table
+#| tbl-cap: "Voyages to or from Hampton Roads, Virginia"
+#| fig-height: 8
+#| column: page-right
+
+voyage_list <- df_voyages %>% 
+               filter(port_from == "hampton road" | port_to == "hampton road")
+
+summarize_voyages(ships = voyage_list$ShipName,
+                  from = "hampton road",
+                  to = "hampton road"
+)
+
+```
+
+<br>
+
+## US and Netherlands
+
+```{r}
+#| label: tbl-between-us-netherlands
+#| tbl-cap: "Voyages between the USA and Netherlands"
+#| column: page-right
+
+ship_list <- 
+  c(df_voyages %>% 
+      filter(country_from == "united states" & country_to == "netherlands") %>%
+      pull(ShipName),
+    df_voyages %>%
+      filter(country_from == "netherlands" & country_to == "united states") %>%
+      pull(ShipName)
+  )
+
+summarize_voyages(ships = ship_list)
+
+```
+
+```{r}
+#| eval: false
+
+knitr::knit_exit()
+
+# TODO: remove this eventually
+
+```
+
+<br>
+
+## Canada and France
+
+```{r}
+#| label: tbl-between-canada-france
+#| tbl-cap: "Voyages between Canada and France"
+#| column: page-right
+
+ship_list <- 
+  c(df_voyages %>% 
+      filter(country_from == "canada" & country_to == "france") %>%
+      pull(ShipName),
+    df_voyages %>%
+      filter(country_from == "france" & country_to == "canada") %>%
+      pull(ShipName)
+  )
+
+summarize_voyages(ships = ship_list)
+
+```
+
+\<br
+
+## Florida
+
+Summary:
+
+<br>
+
+```{r}
+#| label: tbl-to-from-Florida
+#| tbl-cap: "Voyages to or from Florida"
+#| column: page-right
+
+voyage_list <- df_voyages %>% 
+  filter(str_detect(port_to, "florida") | str_detect(port_from, "florida"))
+
+summarize_voyages(ships = voyage_list$ShipName,
+                  from = c("florida", "cape florida", "florida bay"),
+                  to = c("florida", "cape florida", "florida bay")
+)
+
+```
+
+<br>
+
+## American Northwest
+
+```{r }
+#| label: tbl-american-nw
+#| tbl-cap: "Voyages to or from the American Northwest"
+#| column: page-right
+
+nw_explorers <- 
+  get_voyage_details(range_lon = c(-170, -100),
+                     range_lat = c(15, 90)
+                     )
+
+summarize_voyages(ships = nw_explorers$ShipName,
+                  range_lon = c(-170, -100),
+                  range_lat = c(15, 90),
+)
+
+```
+
+<br>
+
+## James Cook's journeys
+
+```{r}
+#| label: tbl-cook
+#| tbl-cap: "James Cook's Voyages in the data set"
+#| column: page-right
+
+ship_list <- c("ENDEAVOUR", "RESOLUTION")
+cooks_journeys <- c("1768-01-01", "1774-12-31")
+
+summarize_voyages(ships = ship_list,
+                  range_dates = cooks_journeys
+)
+
+```
+
+<br>

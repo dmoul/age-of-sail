@@ -1,0 +1,51 @@
+# Notes
+
+```{r}
+#| label: setup
+#| warning: false
+#| message: false
+
+source(here::here("scripts/setup.R"))
+
+sf_use_s2(FALSE)
+
+```
+
+## About the data
+
+Each row of data ("record") in the data set corresponds to one observation, typically:
+
+-   Made at noon local time, recording location (lat/lon) and weather conditions
+-   One observation each day of the voyage, except when a ship stays in port
+
+There are a lot of errors in the data set. Some are likely mistakes or omissions originally committed in the stress of the moment when writing in the ship's log; in other cases errors could have been made in the process of transcribing the written logs into electronic records (while reading unclear handwriting or typing every character and line of every of log entry). Thus I excluded voyages in the following cases:
+
+- Voyages starting earlier than 1750 or later than 1815 (the start date is `VoyageIni`)
+- Records missing latitude, longitude, or the date of observation.
+- Voyages less than `r MIN_VOYAGE_DURATION` days or greater than 2 years; both cases are likely data errors.
+- Voyages in which there is a gap between observations of a year or longer (they are likely multiple voyages).
+- Voyages in which there is a large gap between observations of more than 1000 km.
+- Voyages in which there is a gap of more than 2 days or 600 km (`r round(600 * 0.6213712)` miles).
+
+***TODO: confirm the above***
+
+I excluded repeated observations on the same day of the same voyage; in this case I kept only the first one.
+
+It's worth noting some other considerations:
+
+- Some logs include stops in multiple ports as part of a single voyage. Others break long journies into multiple voyages (a
+ voyage being defined as a unique combination of `ShipName` and `VoyageIni` voyage start date; each voyage has a `VoyageFrom` and `VoyageTo`, and for most I manually normalized port names in `port_from` and `port_to`) and added `country_from` and `country_to`.
+
+- We don't know how these particular logbooks were chosen for digitization, so it's best to assume we have a convenience sample, which limits the kinds of inferences we can make.
+
+- It's not possible to determine from the data set alone when multiple ships share the same name. Typically names are not in use
+ concurrently within one country or company, however it's not uncommon for a name to be revived some years after the demise of
+ previous ship of that name.
+
+- Typically I refer to colonies and countries by their current name in English. In cases of cities and geographic entities (capes, points, bays, rivers) being part of the origin or destination, I generally use current names, except where old names are very well known (for example, Bombay, Madras, Calcutta all have new names, which I didn't use). In some cases I substitute a larger city very close to the small city or fort (for example, Middelburg instead of Vlissingen and Rammekens), and in some cases I have kept the French or Spanish name. I determined the "normalized" port names and added countries by inspecting the port names, plotting the routes, and triangulating via Wikipedia, Google Maps, and Google search. It's possible a small minority of my inferences are incorrect.
+
+- While the motivation and funding for digitizing these logs was to make weather data available for analysis, I'm ignoring weather details and focusing on the voyage tracks.
+
+Even with the above limitations, there is a lot we can learn by plotting the locations recorded each day, which reveals the track of many voyages within the limits of accuracy available at the time using a [sextant](https://en.wikipedia.org/wiki/Sextant), [marine chronometer](https://en.wikipedia.org/wiki/Marine_chronometer), and [almanac.](https://en.wikipedia.org/wiki/Nautical_almanac), and when the weather did not cooperate, by [dead reckoning](https://en.wikipedia.org/wiki/Dead_reckoning).
+
+<br>
