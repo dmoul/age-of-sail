@@ -1,6 +1,6 @@
 # setup.R
 
-knitr::opts_chunk$set(echo = FALSE)
+#knitr::opts_chunk$set(echo = FALSE)
 library(here)
 library(tidyr)
 library(readr)

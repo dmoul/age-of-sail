@@ -2,6 +2,8 @@
 
 ```{r}
 #| label: setup
+#| warning: false
+#| message: false
 
 source(here::here("scripts/setup.R"))
 
@@ -13,12 +15,14 @@ sf_use_s2(FALSE)
 ```{r}
 #| label: load-port-data
 
-ports_normalized <- read_csv(here("data/ports-enriched4.csv")) %>%
+ports_normalized <- read_csv(here("data/ports-enriched4.csv"),
+                             show_col_types = FALSE) %>%
   mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) |>
   arrange(port2, country, level2) |>
   fill(country, .direction = "down") |>
   distinct(port2, country, level2, direction, port, .keep_all = TRUE)
-port_lon_lat <- read_csv(here("data/port_lon_lat.csv")) %>%
+port_lon_lat <- read_csv(here("data/port_lon_lat.csv"),
+                         show_col_types = FALSE) %>%
   mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) %>%
   filter(!is.na(port2))
 df_ports <- left_join(ports_normalized, port_lon_lat, by = "port2") %>%
@@ -30,6 +34,9 @@ df_ports <- left_join(ports_normalized, port_lon_lat, by = "port2") %>%
 ```
 
 ```{r}
+#| warning: false
+#| message: false
+
 source(here("scripts/load-voyages.R"))
 
 ```

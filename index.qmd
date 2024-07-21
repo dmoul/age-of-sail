@@ -1,5 +1,47 @@
 # Introduction {.unnumbered}
 
+```{r}
+#| label: setup
+#| warning: false
+#| message: false
+
+source(here::here("scripts/setup.R"))
+
+sf_use_s2(FALSE)
+
+```
+
+```{r}
+#| label: load-port-data
+##| warning: false
+##| message: false
+
+ports_normalized <- read_csv(here("data/ports-enriched4.csv"),
+                             show_col_types = FALSE) %>%
+  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) |>
+  arrange(port2, country, level2) |>
+  fill(country, .direction = "down") |>
+  distinct(port2, country, level2, direction, port, .keep_all = TRUE)
+port_lon_lat <- read_csv(here("data/port_lon_lat.csv"),
+                         show_col_types = FALSE) %>%
+  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) %>%
+  filter(!is.na(port2))
+df_ports <- left_join(ports_normalized, port_lon_lat, by = "port2") %>%
+  mutate_if(is.character, ~map_chr(.x, iconv, "UTF-8", "UTF-8", sub='')) %>% # just in case
+  mutate(level2 = coalesce(level2.x, level2.y),
+         country = coalesce(country.x, country.y)) %>%
+  select(-ends_with(c(".x", ".y")))
+
+```
+
+```{r}
+#| warning: false
+#| message: false
+
+source(here("scripts/load-voyages.R"))
+
+```
+
 Two hundred and fifty years ago sailings ships were the engines of colonization and commerce. Where did they sail? How far and how
 long? We can gain some insight by making use of the Climatological Database for the World's Oceans (CLIWOC), which includes 287K
 observations from logbooks of `r nrow(count(all_voyages, ShipName))` ships from `r nrow(count(all_voyages, Nationality))` countries,
