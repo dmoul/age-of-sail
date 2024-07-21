@@ -1,0 +1,32 @@
+project:
+  type: book
+
+book:
+  title: "Some voyages in the age of sail 1750-1815"
+  subtitle: "with updates to the 2021-01-02 version."
+  author: Daniel Moul
+  date: today
+  chapters:
+    - "index.qmd"
+    - "nationalities-distances.qmd"
+    # - "p2.qmd"
+  page-footer: 
+    center: "Copyright 2024 by [Daniel Moul](https://dmoul.github.io). License: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/)"
+    background: dark
+
+license: "CC BY"
+  
+execute: 
+  freeze: auto # re-render only when source changes
+
+format:
+  html:
+    theme: cosmo
+    code-fold: true
+    number-sections: true
+    code-summary: "Show the code"
+    page-layout: full
+    toc: true
+    toc-depth: 3
+    title-block-banner: true
+
