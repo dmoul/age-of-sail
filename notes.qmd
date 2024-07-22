@@ -7,8 +7,6 @@
 
 source(here::here("scripts/setup.R"))
 
-sf_use_s2(FALSE)
-
 ```
 
 ## About the data
@@ -16,18 +14,19 @@ sf_use_s2(FALSE)
 Each row of data ("record") in the data set corresponds to one observation, typically:
 
 -   Made at noon local time, recording location (lat/lon) and weather conditions
--   One observation each day of the voyage, except when a ship stays in port
+-   One observation each day of the voyage, except when a ship was in port
 
-There are a lot of errors in the data set. Some are likely mistakes or omissions originally committed in the stress of the moment when writing in the ship's log; in other cases errors could have been made in the process of transcribing the written logs into electronic records (while reading unclear handwriting or typing every character and line of every of log entry). Thus I excluded voyages in the following cases:
+There are a lot of errors and omissions in the data set. Some likely were originally made in the stress of the moment when writing in the ship's log; in other cases errors probably were made in the process of transcribing the written logs into electronic records (for example: reading unclear handwriting, inferring the meaning of abbreviations used inconsistently, or while typing every character and line of every of log entry). Thus I excluded voyages or observations in the following cases:
 
 - Voyages starting earlier than 1750 or later than 1815 (the start date is `VoyageIni`)
-- Records missing latitude, longitude, or the date of observation.
-- Voyages less than `r MIN_VOYAGE_DURATION` days or greater than 2 years; both cases are likely data errors.
-- Voyages in which there is a gap between observations of a year or longer (they are likely multiple voyages).
-- Voyages in which there is a large gap between observations of more than 1000 km.
-- Voyages in which there is a gap of more than 2 days or 600 km (`r round(600 * 0.6213712)` miles).
+- Voyages missing ship name, start date, or end date
+- Records missing latitude, longitude, or the date of observation
+- Voyages less than `r MIN_VOYAGE_DURATION` days
+- Voyages in which there is a large gap between observations (more than 1000 km). or 1000 days (`r round(1000 /365, digits = 1)` years)
 
-***TODO: confirm the above***
+When making maps of voyages I excluded these in addition:
+
+- Voyages in which there is a gap of more than 2 days or 1000 km (`r round(1000 * 0.6213712)` miles)
 
 I excluded repeated observations on the same day of the same voyage; in this case I kept only the first one.
 
@@ -47,5 +46,47 @@ It's worth noting some other considerations:
 - While the motivation and funding for digitizing these logs was to make weather data available for analysis, I'm ignoring weather details and focusing on the voyage tracks.
 
 Even with the above limitations, there is a lot we can learn by plotting the locations recorded each day, which reveals the track of many voyages within the limits of accuracy available at the time using a [sextant](https://en.wikipedia.org/wiki/Sextant), [marine chronometer](https://en.wikipedia.org/wiki/Marine_chronometer), and [almanac.](https://en.wikipedia.org/wiki/Nautical_almanac), and when the weather did not cooperate, by [dead reckoning](https://en.wikipedia.org/wiki/Dead_reckoning).
+
+<br>
+
+## Acknowledgements
+
+I was inspired by Simon Coulombe's write up: [Animated map of ships,
+1750-1799](https://www.simoncoulombe.com/2020/11/animated-ships/) which makes use of the [Climatological Database for the World's
+Oceans (CLIWOC)](https://www.historicalclimatology.com/cliwoc.html)
+
+> The Climatological Database for the World's Oceans (CLIWOC) represents the culmination of a major project funded by the European
+> Union, and pursued by a large team of researchers in organizations and universities around the world. ... You can read more about
+> how the database was originally coded, and has now been reformatted, at Steven's [website](https://stvno.github.io/page/cliwoc/).
+> This is essential reading if you'd like to use the database for climate history research.
+>
+> To interpret nautical terms in the database, you will likely need to use a
+> [dictionary](https://www.historicalclimatology.com/uploads/4/5/1/4/4514421/cliwoc_nautical_terms.pdf) created as part of the
+> CLIWOC project.
+
+I could have retrieved the data from source at <https://www.historicalclimatology.com/cliwoc.html>, however Simon offers a download
+that is cleaned up a bit already:
+
+-   <https://blogsimoncoulombe.s3.amazonaws.com/cliwoc/cliwoc21.csv>
+
+I referred a lot to the codebook at <https://stvno.github.io/page/cliwoc/> which explains the data columns.
+
+Thanks to the EU for funding the digitization and to everyone who did the work to get the data in a state that made my task so easy.
+And thanks to Claus Wilke for providing the code pattern for plotting a globe with simple features (sf R package), which Simon and I
+both followed.
+
+Adrien Charles (and others?) at Axxio made a nice visualization in Tableau here: <https://www.axxio.io/the-age-of-discovery/> , and
+there are other examples a web search away. I did not consult them before doing my own work.
+
+Thanks to everyone developing R, RStudio, and the many high-quality R packages I used:
+
+* tidyverse and tidyverse-adjacent: tidyr, readr, readxl, dplyr, purrr, ggplot2, stringr, lubridate, forcats, skimr, gt, scales, here, hrbrthemes
+* GIS: sf, lwgeom, rnaturalearth, cowplot, measurements, units
+
+<br>
+
+### Source files
+
+Source files for this analysis are available at <https://dmoul.github.io/age-of-sailing> 
 
 <br>

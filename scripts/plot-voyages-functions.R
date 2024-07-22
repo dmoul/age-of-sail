@@ -215,7 +215,7 @@ plot_voyages <- function(ports = NA, from = NA, to = NA, ships = NA,
   # RETURN: nothing (so call directly or call with walk() rather than map() )
   # SIDE EFFECT: print one ggplot plot of all voyages to/from the list of ports for relevant ships in the relevant area
   
-  ELEMENTS_TITLE_LENGTH <- 4
+  ELEMENTS_TITLE_LENGTH <- 6
   ELEMENTS_CAPTION_LENGTH <- 10
   WRAP_TITLE_LENGTH <- 70 # 40
   WRAP_CAPTION_LENGTH <- 120 # 60
@@ -302,50 +302,48 @@ plot_voyages <- function(ports = NA, from = NA, to = NA, ships = NA,
   
   ###### make plot strings ######
   
-  # TODO: the following aren't working with string_collapse_with_descriptor()
-  
   my_ship_string <- string_collapse_with_descriptor(
     sort(unique(voyages_for_plot_temp$ShipName)), 
     ELEMENTS_TITLE_LENGTH,
-    type_of_entity = "ships"
+    type_of_entity = "ship(s)"
   )
   
   my_ports_string <- string_collapse_with_descriptor(
     sort(unique(c(voyages_for_plot_temp$VoyageFrom, 
                   voyages_for_plot_temp$VoyageTo))), 
     ELEMENTS_CAPTION_LENGTH,
-    type_of_entity = "ports"
+    type_of_entity = "port(s)"
   )
   
   my_ports_from_string <- string_collapse_with_descriptor(
     sort(unique(voyages_for_plot_temp$VoyageFrom)), 
     ELEMENTS_TITLE_LENGTH,
-    type_of_entity = "ports"
+    type_of_entity = "port(s)"
   )
   
   my_ports_to_string <- string_collapse_with_descriptor(
     sort(unique(voyages_for_plot_temp$VoyageTo)), 
     ELEMENTS_TITLE_LENGTH,
-    type_of_entity = "ports"
+    type_of_entity = "port(s)"
   )
   
   my_port2_string <- string_collapse_with_descriptor(
     sort(unique(c(voyages_for_plot_temp$port_from, 
                   voyages_for_plot_temp$port_to))), 
     ELEMENTS_TITLE_LENGTH,
-    type_of_entity = "ports"
+    type_of_entity = "port(s)"
   )
   
   my_port2_from_string <- string_collapse_with_descriptor(
     sort(unique(voyages_for_plot_temp$port_from)), 
     ELEMENTS_TITLE_LENGTH, 
-    type_of_entity = "ports"
+    type_of_entity = "port(s)"
   )
   
   my_port2_to_string <- string_collapse_with_descriptor(
     sort(unique(voyages_for_plot_temp$port_to)), 
     ELEMENTS_TITLE_LENGTH,
-    type_of_entity = "ports"
+    type_of_entity = "port(s)"
   )
   
   my_title <- "Voyages"
@@ -562,310 +560,3 @@ plot_voyages <- function(ports = NA, from = NA, to = NA, ships = NA,
   p
   
 }
-
-###### test ######
-
-# test
-# plot_voyages()
-
-# voyage_list <- df_voyages %>% 
-#   filter(port_from == "hampton road" | port_to == "hampton road")
-# 
-# plot_voyages(ships = voyage_list$ShipName,
-#              from = "hampton road",
-#              to = "hampton road" 
-# )
-
-# plot_voyages(ports = c("nouvelle hollande"))
-# plot_voyages(
-#   ports = "cork",
-#   ships = c("ACASTA", "DOVER CASTLE", "GREYHOUND", "ILCHESTER", "AQUILON")
-# )
-# 
-# plot_voyages(
-#   ships = df_voyages %>%
-#     filter(country_from %in% c("united states") & country_to %in% c("spain") |
-#            country_to %in% c("united states") & country_from %in% c("spain")
-#     ) %>%
-#     distinct(ShipName) %>%
-#     pull(ShipName),
-#   ports = df_voyages %>%
-#     filter(country_from %in% c("united states") & country_to %in% c("spain") |
-#              country_to %in% c("united states") & country_from %in% c("spain")
-#     ) %>%
-#     pull(port_from, port_to)
-# ) 
-# 
-# plot_voyages(
-#   ships = df_voyages %>%
-#     filter(country_from %in% c("united states") & country_to %in% c("uk") |
-#              country_to %in% c("united states") & country_from %in% c("uk")
-#     ) %>%
-#     distinct(ShipName) %>%
-#     pull(ShipName),
-#   ports = df_voyages %>%
-#     filter(country_from %in% c("united states") & country_to %in% c("uk") |
-#              country_to %in% c("united states") & country_from %in% c("uk")
-#     ) %>%
-#     pull(port_from, port_to)
-# ) 
-# 
-# plot_voyages(
-#   ships = df_voyages %>%
-#     filter(country_from %in% c("united states") & country_to %in% c("indonesia") |
-#              country_to %in% c("united states") & country_from %in% c("indonesia")
-#     ) %>%
-#     distinct(ShipName) %>%
-#     pull(ShipName),
-#   ports = df_voyages %>%
-#     filter(country_from %in% c("united states") & country_to %in% c("indonesia") |
-#              country_to %in% c("united states") & country_from %in% c("indonesia")
-#     ) %>%
-#     pull(port_from, port_to)
-# ) 
-# 
-# plot_voyages(
-#   ships = df_voyages %>%
-#     filter(country_from %in% c("cuba") & country_to %in% c("spain") #|
-#              #country_to %in% c("mexico") & country_from %in% c("spain)
-#     ) %>%
-#     distinct(ShipName) %>%
-#     pull(ShipName)
-#   # ports = df_voyages %>%
-#   #   filter(country_from %in% c("cuba") & country_to %in% c("spain") #|
-#   #            #country_to %in% c("mexico") & country_from %in% c("spain")
-#   #   ) %>%
-#   #   pull(port_from, port_to)
-# ) 
-# # above not working:
-# # Error: No recognized ports or ship names provided
-# # usage: plot_voyages(ports = NA, from = NA, to = NA, ships = NA)
-# 
-# 
-# # from <- NA
-# # to <- NA
-# # ports <- NA
-# # ships <- NA
-# # my_ports <- NA
-# # my_port2 <- NA
-# 
-# 
-# ports <- NA
-# ships <- NA
-# to = c("veracruz", "cádiz")
-# from = c("montevideo")
-# 
-# plot_voyages(
-#   from = c("montevideo", "havana"),
-#   to = c("veracruz", "cádiz")
-# )
-# 
-# to = c("cádiz")
-# from = c("montevideo")
-# 
-# to <- c("veracruz", "cádiz")
-# from <- c("veracruz", "cádiz")
-# 
-# 
-# plot_voyages(from = "veracruz", to = "cádiz")
-# plot_voyages(to = "veracruz", from = "cádiz")
-# 
-# plot_voyages(to = c("cádiz"),
-#              from = c("montevideo")
-# )
-# 
-# plot_voyages(from = c("cádiz"),
-#              to = c("montevideo")
-# )
-# 
-# plot_voyages(to = df_ports %>%
-#                filter(country == "united states") %>%
-#                distinct(port2) %>%
-#                pull(),
-#              from = df_ports %>%
-#                filter(country == "portugal") %>%
-#                distinct(port2) %>%
-#                pull()
-# )
-# 
-# plot_voyages(from = df_ports %>%
-#                filter(country == "south africa") %>%
-#                distinct(port2) %>%
-#                pull(),
-#              to = df_ports %>%
-#                filter(country == "india") %>%
-#                distinct(port2) %>%
-#                pull()
-# )
-# 
-# plot_voyages(to = df_ports %>%
-#                filter(country == "south africa") %>%
-#                distinct(port2) %>%
-#                pull(),
-#              from = df_ports %>%
-#                filter(country == "india") %>%
-#                distinct(port2) %>%
-#                pull()
-# )
-# 
-# # we can see the strategy of finding the right lattitude then moving west to reach St Helena
-# plot_voyages(to = "st helena",
-#              from = df_ports %>%
-#                filter(country == "india") %>%
-#                distinct(port2) %>%
-#                pull()
-# )
-# # same when coming from Indonesia
-# plot_voyages(to = "st helena",
-#              from = df_ports %>%
-#                filter(country == "indonesia") %>%
-#                distinct(port2) %>%
-#                pull()
-# )
-# 
-# # going the other way
-# plot_voyages(from = "st helena",
-#              to = df_ports %>%
-#                filter(country == "indonesia") %>%
-#                distinct(port2) %>%
-#                pull()
-# )
-# plot_voyages(from = "st helena",
-#              to = df_ports %>%
-#                filter(country == "india") %>%
-#                distinct(port2) %>%
-#                pull()
-# )
-# 
-# plot_voyages(to = c("cádiz", "havana"),
-#              from = c("veracruz", "cádiz")
-# )
-# plot_voyages(to = c("cádiz", "havana"),
-#              from = c("cádiz", "havana")
-# )
-# 
-# from <- NA
-# to <- NA
-# ships <- NA
-# ports = "cádiz"
-# plot_voyages(ports = "cádiz")
-# plot_voyages(ships = "SWALLOW")
-# plot_voyages(ports = "madras",
-#              ships = "SWALLOW")
-# 
-# 
-# from <- NA
-# to <- NA
-# ships <- "RESOLUTION"
-# ports = NA
-# plot_voyages(ports = "wellington",
-#              ships = c("RESOLUTION", "ENDEAVOUR")
-# )
-# 
-# plot_voyages(#ports = "wellington",
-#              ships = c("ENDEAVOUR")
-# )
-# 
-# plot_voyages(ports = c("cape corse castle", "elmira"))
-#              
-# ports <- NA
-# ships <- NA
-# to <- c("veracruz", "cádiz")
-# from <- c("veracruz", "cádiz")
-# plot_voyages(from = c("veracruz", "cádiz"),
-#              to = c("veracruz", "cádiz"))
-# 
-# plot_voyages(ports = c("dickis cove", "dix cove"))
-# 
-# plot_voyages(ships = "SCORPION")
-# 
-# plot_voyages(ports = c("ascension island", "st helena"))
-# plot_voyages(to = c("ascension island"),
-#              from = c("st helena")
-# )
-# 
-# #from works but not to. Why?
-# plot_voyages(to = df_ports %>%
-#                filter(country == "chile") %>%
-#                distinct(port2) %>%
-#                pull() #, 
-#              # from = df_ports %>%
-#              #   filter(country == "chile") %>%
-#              #   distinct(port2) %>%
-#              #   pull()
-# )
-# ports <- NA
-# ships <- NA
-# from <- NA
-# to <- df_ports %>%
-#   filter(country == "chile") %>%
-#   distinct(port2) %>%
-#   pull()
-# 
-# to_chile <- df_ports %>%
-#   filter(country == "cana") %>%
-#   distinct(port2) %>%
-#   pull()
-# 
-# df_voyages %>% 
-#   filter(port_to %in% to_chile,
-#          longitude> -5)
-# 
-# plot_voyages(from = "bermuda")
-# 
-# plot_voyages(from = "little popo")
-# 
-# ports <- NA
-# ships <- NA
-# from <- NA
-# to <- NA
-# range_lon <- NA
-# range_lat <- NA
-# range_lon <- c(-100, -140)
-# range_lat <- c(20, 89)
-# 
-# plot_voyages(range_lon = c(-100, -140),
-#              range_lat = c(0, 89)
-#              )
-# 
-# plot_voyages(#range_lon = c(-100, -140),
-#              range_lat = c(-60, -89)
-# )
-# 
-# 
-# aa <- get_ship_observations(from = "calcutta") %>%
-#   group_by(ShipName, VoyageIni, VoyageFrom, port_from, country_from, VoyageTo, port_to, country_to, Nationality, Company) %>%
-#   summarize(date_first = min(ObsDate),
-#             date_last = max(ObsDate),
-#             n_days = as.integer(difftime(date_last, date_first, units = "days")),
-#             n_obs = n()) %>%
-#   ungroup()
-# 
-# aa %>%
-#   gt() %>%
-#   opt_table_font(
-#     font = c(
-#       "Arial Narrow",
-#       default_fonts()
-#     )
-#   )
-# 
-# 
-# plot_voyages(to = "calcutta", 
-#              from = "goa")
-# 
-# summarize_ship_observations(from = "calcutta", 
-#                             to = "goa")
-# 
-# ship_list <- df_voyages %>%
-#   filter(country_from == "sri lanka") %>%
-#   distinct(ShipName, port_from, port_to)
-# summarize_ship_observations(from = ship_list$port_from, 
-#                             to = ship_list$port_to)
-# plot_voyages(to = ship_list$port_from#, 
-#              #to = ship_list$port_to
-#              )
-# 
-# 
-# summarize_ship_observations(from = "calcutta", 
-#                             to = "goa")

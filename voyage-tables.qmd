@@ -7,56 +7,6 @@
 
 source(here::here("scripts/setup.R"))
 
-sf_use_s2(FALSE)
-
-```
-
-```{r}
-#| label: load-port-data
-
-ports_normalized <- read_csv(here("data/ports-enriched4.csv"),
-                             show_col_types = FALSE) %>%
-  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) |>
-  arrange(port2, country, level2) |>
-  fill(country, .direction = "down") |>
-  distinct(port2, country, level2, direction, port, .keep_all = TRUE)
-port_lon_lat <- read_csv(here("data/port_lon_lat.csv"),
-                         show_col_types = FALSE) %>%
-  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) %>%
-  filter(!is.na(port2))
-df_ports <- left_join(ports_normalized, port_lon_lat, by = "port2") %>%
-  mutate_if(is.character, ~map_chr(.x, iconv, "UTF-8", "UTF-8", sub='')) %>% # just in case
-  mutate(level2 = coalesce(level2.x, level2.y),
-         country = coalesce(country.x, country.y)) %>%
-  select(-ends_with(c(".x", ".y")))
-
-```
-
-```{r}
-#| label: create-world-and-water
-#| eval: false
-
-# World map example from https://www.simoncoulombe.com/2020/11/animated-ships/
-  
-world <- rnaturalearth::ne_countries(scale='medium',returnclass = 'sf') %>%
-  st_transform(crs = my_proj)
-
-# create water polygon for background 
-lats <- c(90:-90, -90:90, 90)
-longs <- c(rep(c(180, -180), each = 181), 180)
-water_outline <- 
-  list(cbind(longs, lats)) %>%
-  st_polygon() %>%
-  st_sfc(crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs") %>% 
-  st_sf() %>%
-  st_transform(crs = my_proj)
-
-```
-
-```{r}
-#| warning: false
-#| message: false
-
 source(here("scripts/load-voyages.R"))
 
 source(here("scripts/plot-voyages-functions.R"))
@@ -65,7 +15,7 @@ source(here("scripts/plot-voyages-functions.R"))
 
 Below are selected data tables corresponding to some of the maps plotted earlier.
 
-## Hampton Roads
+## Hampton Roads {#sec-hampton-roads}
 
 Voyages to/from Hampton Roads ("hampton road") in table form. Column names are a subset of the variables in the data frame I used
 for plotting. Ones with capital letters were in the original data set; I added the ones in lower case.
@@ -90,7 +40,7 @@ summarize_voyages(ships = voyage_list$ShipName,
 
 <br>
 
-## US and Netherlands
+## US and Netherlands {#sec-us-netherlands}
 
 ```{r}
 #| label: tbl-between-us-netherlands
@@ -110,18 +60,9 @@ summarize_voyages(ships = ship_list)
 
 ```
 
-```{r}
-#| eval: false
-
-knitr::knit_exit()
-
-# TODO: remove this eventually
-
-```
-
 <br>
 
-## Canada and France
+## Canada and France {#sec-canada-france}
 
 ```{r}
 #| label: tbl-between-canada-france
@@ -143,11 +84,7 @@ summarize_voyages(ships = ship_list)
 
 \<br
 
-## Florida
-
-Summary:
-
-<br>
+## Florida {#sec-florida}
 
 ```{r}
 #| label: tbl-to-from-Florida
@@ -166,7 +103,7 @@ summarize_voyages(ships = voyage_list$ShipName,
 
 <br>
 
-## American Northwest
+### American Northwest {#sec-american-northwest}
 
 ```{r }
 #| label: tbl-american-nw
@@ -187,7 +124,7 @@ summarize_voyages(ships = nw_explorers$ShipName,
 
 <br>
 
-## James Cook's journeys
+## James Cook's journeys {#sec-cook}
 
 ```{r}
 #| label: tbl-cook

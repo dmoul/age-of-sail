@@ -7,63 +7,30 @@
 
 source(here::here("scripts/setup.R"))
 
-sf_use_s2(FALSE)
-
-```
-
-```{r}
-#| label: load-port-data
-##| warning: false
-##| message: false
-
-ports_normalized <- read_csv(here("data/ports-enriched4.csv"),
-                             show_col_types = FALSE) %>%
-  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) |>
-  arrange(port2, country, level2) |>
-  fill(country, .direction = "down") |>
-  distinct(port2, country, level2, direction, port, .keep_all = TRUE)
-port_lon_lat <- read_csv(here("data/port_lon_lat.csv"),
-                         show_col_types = FALSE) %>%
-  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) %>%
-  filter(!is.na(port2))
-df_ports <- left_join(ports_normalized, port_lon_lat, by = "port2") %>%
-  mutate_if(is.character, ~map_chr(.x, iconv, "UTF-8", "UTF-8", sub='')) %>% # just in case
-  mutate(level2 = coalesce(level2.x, level2.y),
-         country = coalesce(country.x, country.y)) %>%
-  select(-ends_with(c(".x", ".y")))
-
-```
-
-```{r}
-#| warning: false
-#| message: false
-
 source(here("scripts/load-voyages.R"))
 
 ```
 
 Two hundred and fifty years ago sailings ships were the engines of colonization and commerce. Where did they sail? How far and how
 long? We can gain some insight by making use of the Climatological Database for the World's Oceans (CLIWOC), which includes 287K
-observations from logbooks of `r nrow(count(all_voyages, ShipName))` ships from `r nrow(count(all_voyages, Nationality))` countries,
-mostly British, Dutch, French, and Spanish) that made `r nrow(count(all_voyages, ShipName, VoyageIni))` journeys. The digitized
-records are mostly from journeys between 1750 and 1815. These journey during this portion of the [Age of
-Sail](https://en.wikipedia.org/wiki/Age_of_Sail) influenced (and sometimes directly motivated) by these historical events:
+observations from the logbooks of `r nrow(count(all_voyages, ShipName))` ships from `r nrow(count(all_voyages, Nationality))` countries,
+(mostly British, Dutch, French, and Spanish) that made `r nrow(count(all_voyages, ShipName, VoyageIni))` journeys. The digitized
+records are mostly from journeys between 1750 and 1815. These journeys during this portion of the [Age of
+Sail](https://en.wikipedia.org/wiki/Age_of_Sail) influenced and sometimes were directly motivated by these historical events:
 
 -   [Seven years war](https://en.wikipedia.org/wiki/Seven_Years%27_War) (1756-1763) which included the [French and Indian
     War](https://en.wikipedia.org/wiki/French_and_Indian_War) in North America
 -   [American War of Independence](https://en.wikipedia.org/wiki/American_Revolutionary_War), [French
     Revolution](https://en.wikipedia.org/wiki/French_Revolution) and resulting [French Revolutionary
     Wars](https://en.wikipedia.org/wiki/French_Revolutionary_Wars), and others wars of independence in the Americas, including
-    [Haiti](https://en.wikipedia.org/wiki/Haitian_Revolution), and the [Spanish American
-    colonies](https://en.wikipedia.org/wiki/Spanish_American_wars_of_independence) (the latter continued beyond 1815 for many
+    [Haiti](https://en.wikipedia.org/wiki/Haitian_Revolution) and the [Spanish American
+    colonies](https://en.wikipedia.org/wiki/Spanish_American_wars_of_independence) (the latter continued beyond 1815 in many
     colonial lands)
--   Voyages of discovery, including two by [James Cook](https://en.wikipedia.org/wiki/James_Cook)
+-   Voyages of exploration, including [James Cook](https://en.wikipedia.org/wiki/James_Cook) and [La Boussole](https://en.wikipedia.org/wiki/French_ship_Boussole_(1781))
 -   [Battle of Waterloo](https://en.wikipedia.org/wiki/Battle_of_Waterloo) and [Congress of
     Vienna](https://en.wikipedia.org/wiki/Congress_of_Vienna), bringing to end the [Napoleonic
     Wars](https://en.wikipedia.org/wiki/Napoleonic_Wars)
--   The waxing preeminence of the British on the worlds' seas.
-
-<br>
+-   The waxing preeminence of the British on the world's seas.
 
 This data set only hints at the human drama: the strict and sometimes shockingly excessive punishment, the high mortality rate, the
 deprivations, and the near-unimaginable sufferings inherent in the slave trade. Or the triumphs of winning a hard-fought, costly
@@ -72,5 +39,11 @@ period to life. I recommend Patrick O'Brian's Aubrey and Maturin series starting
 Commander](https://en.wikipedia.org/wiki/Master_and_Commander). Or start with the movie [Master and Commander: The Far Side of the
 World](https://en.wikipedia.org/wiki/Master_and_Commander:_The_Far_Side_of_the_World), which includes events from a number of the
 books.
+
+<br>
+
+## A note from the author
+
+I first published this in 2021 during the first year of the COVID-19 pandemic. It was a way to travel vicariously through time and place while stuck at home, learning something about the globe-spanning voyages of sailing ships prior to the age of steam. I updated this work in 2024 to improve the narrative, maps, and tables while also moving from a single knitr-generated document to a quarto-generated set of interlinked docs (a quarto "book") with improved layout.
 
 <br>

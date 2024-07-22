@@ -1,5 +1,26 @@
 # load-voyages
 
+###### Prepare port data
+
+ports_normalized <- read_csv(here("data/ports-enriched4.csv"),
+                             show_col_types = FALSE) %>%
+  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) |>
+  arrange(port2, country, level2) |>
+  fill(country, .direction = "down") |>
+  distinct(port2, country, level2, direction, port, .keep_all = TRUE)
+
+port_lon_lat <- read_csv(here("data/port_lon_lat.csv"),
+                         show_col_types = FALSE) %>%
+  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) %>%
+  filter(!is.na(port2))
+
+df_ports <- left_join(ports_normalized, port_lon_lat, by = "port2") %>%
+  mutate_if(is.character, ~map_chr(.x, iconv, "UTF-8", "UTF-8", sub='')) %>% # just in case
+  mutate(level2 = coalesce(level2.x, level2.y),
+         country = coalesce(country.x, country.y)) %>%
+  select(-ends_with(c(".x", ".y")))
+
+
 ###### get (or prepare) all_voyages ######
 
 fname_cliwoc21 <- here("data/processed/cliwoc21-cleaned.rds")
@@ -158,26 +179,6 @@ df_voyages <- all_voyages %>%
     Year >= 1750, # start of main data set; remove some earlier year outliers
     Year <= 1815  # through the end of the Napoleonic Wars
   ) %>%
-  # TODO: this commented-out section is creating some duplications; fix before uncommenting
-  # # where did ships spend most of their time? define approximate regions
-  # mutate(region_atlantic_north = if_else(latitude >= 10 & (longitude < 20 & longitude > -80), 1, 0),
-  #        region_atlantic_south = if_else(latitude < 10 & (longitude < 20 & longitude > -70), 1, 0),
-  #        region_pacific_north = if_else(latitude > 0 & (longitude < -100 & longitude >= -180) | 
-  #                                         (longitude <= 180 & longitude > 120)
-  #                                       , 1, 0),
-  #        region_pacific_south = if_else(latitude < 0 & (longitude < -70 & longitude >= -180) | 
-  #                                         (longitude <= 180 & longitude > 120)
-  #                                       , 1, 0),
-  #        region_indian_ocean = if_else(latitude < 25 & (longitude >20 & longitude < 120), 1, 0),
-  # ) %>%
-  # mutate(region_other = if_else(region_atlantic_north + region_atlantic_south + 
-  #                                 region_pacific_north + region_pacific_south + region_indian_ocean == 0,
-  #                               1, 0)
-  # ) %>%
-  # pivot_longer(cols = starts_with("region_"), names_to = "region") %>%
-  # filter(value == 1) %>%
-  # select(-value) %>%
-  # mutate(region = str_remove(region, "region_")) %>%
   left_join(.,
             color_routes,
             by = "Nationality") %>%

@@ -1,10 +1,8 @@
 # setup.R
 
-#knitr::opts_chunk$set(echo = FALSE)
 library(here)
 library(tidyr)
 library(readr)
-# library(readODS)
 library(readxl)
 library(skimr) 
 library(dplyr)
@@ -16,7 +14,6 @@ library(glue)
 library(gt)
 library(purrr)
 library(scales)
-#library(patchwork)
 
 library(rnaturalearth) # for landmass boundaries
 library(cowplot)       # for theme_map()
@@ -29,15 +26,10 @@ library(units)
 
 library(hrbrthemes)    # for plot layout
 options(hrbrthemes.loadfonts = TRUE,
-        #fig.width = 8 #was "100%"
-        #fig.height = 10, #was uncommented
-        #fig.width = 12
-        #out.width = "100%", #was uncommented
         warn = FALSE,
         fig.retina = 3
-        #fig.width = 12
 )
-theme_set(theme_ipsum_ps() + #base_size = 10
+theme_set(theme_ipsum_ps() + # base_size = 10
             theme(panel.grid.major = element_blank(),
                   panel.grid.minor = element_blank()
             )
@@ -48,6 +40,7 @@ my_caption <- glue("By Daniel Moul",
 
 my_caption_map_extra <- glue("\nMap code following Simon Coulombe and Claus Wilke",
                              "\nhttps://www.simoncoulombe.com/2020/11/animated-ships/")
+
 # map projection
 # I wanted to use '+proj=wintri' (Winkel Tripel), but ggplot gives error after transforming with st_transform() or st_transform_proj()
 ##  Error in CPL_geos_op2(op, x, y) : 
@@ -55,6 +48,8 @@ my_caption_map_extra <- glue("\nMap code following Simon Coulombe and Claus Wilk
 # my_proj <- "WGS84"
 # my_proj <- '+proj=wink1'
 my_proj <- '+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs'
+
+sf_use_s2(FALSE)
 
 # Suppress summarise info
 options(dplyr.summarise.inform = FALSE)
