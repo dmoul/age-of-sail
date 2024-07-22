@@ -45,7 +45,7 @@ It's worth noting some other considerations:
 
 - While the motivation and funding for digitizing these logs was to make weather data available for analysis, I'm ignoring weather details and focusing on the voyage tracks.
 
-Even with the above limitations, there is a lot we can learn by plotting the locations recorded each day, which reveals the track of many voyages within the limits of accuracy available at the time using a [sextant](https://en.wikipedia.org/wiki/Sextant), [marine chronometer](https://en.wikipedia.org/wiki/Marine_chronometer), and [almanac.](https://en.wikipedia.org/wiki/Nautical_almanac), and when the weather did not cooperate, by [dead reckoning](https://en.wikipedia.org/wiki/Dead_reckoning).
+Even with the above limitations, there is a lot we can learn by plotting the locations recorded each day, which reveals the track of many voyages within the limits of accuracy available at the time, which used a [sextant](https://en.wikipedia.org/wiki/Sextant), [marine chronometer](https://en.wikipedia.org/wiki/Marine_chronometer), and [almanac](https://en.wikipedia.org/wiki/Nautical_almanac), and when the weather did not cooperate, by [dead reckoning](https://en.wikipedia.org/wiki/Dead_reckoning).
 
 <br>
 
@@ -87,6 +87,6 @@ Thanks to everyone developing R, RStudio, and the many high-quality R packages I
 
 ### Source files
 
-Source files for this analysis are available at <https://dmoul.github.io/age-of-sailing> 
+Source files for this analysis are available at <https://github.com/dmoul/age-of-sailing> 
 
 <br>
