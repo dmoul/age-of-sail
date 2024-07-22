@@ -1,4 +1,4 @@
-# Nationalities and distances
+# Summaries
 
 ```{r}
 #| label: setup
@@ -6,36 +6,6 @@
 #| message: false
 
 source(here::here("scripts/setup.R"))
-
-sf_use_s2(FALSE)
-
-```
-
-
-```{r}
-#| label: load-port-data
-
-ports_normalized <- read_csv(here("data/ports-enriched4.csv"),
-                             show_col_types = FALSE) %>%
-  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) |>
-  arrange(port2, country, level2) |>
-  fill(country, .direction = "down") |>
-  distinct(port2, country, level2, direction, port, .keep_all = TRUE)
-port_lon_lat <- read_csv(here("data/port_lon_lat.csv"),
-                         show_col_types = FALSE) %>%
-  mutate( across(.cols = c(port2, level2, country), ~str_trim(str_to_lower(.x)) ) ) %>%
-  filter(!is.na(port2))
-df_ports <- left_join(ports_normalized, port_lon_lat, by = "port2") %>%
-  mutate_if(is.character, ~map_chr(.x, iconv, "UTF-8", "UTF-8", sub='')) %>% # just in case
-  mutate(level2 = coalesce(level2.x, level2.y),
-         country = coalesce(country.x, country.y)) %>%
-  select(-ends_with(c(".x", ".y")))
-
-```
-
-```{r}
-#| warning: true
-#| message: true
 
 source(here("scripts/load-voyages.R"))
 
@@ -103,7 +73,7 @@ janitor::adorn_totals(where = "row") |>
 #| fig-width: 8
 
 data_for_plot <- df_voyages %>%
-  distinct(ShipName, Year, Nationality, color_route) %>% #VoyageIni, 
+  distinct(ShipName, Year, Nationality, color_route) %>%
   mutate(Nationality = str_to_title(Nationality)) %>%
   # not enough data for the histogram
   filter(!Nationality %in% c("American", "Danish", "Hamburg", "Swedish")) 
@@ -119,8 +89,9 @@ ggplot() +
   geom_histogram(data = data_for_plot,
                  aes(Year, fill = color_route),
                  binwidth = 5) +
-  scale_x_continuous(breaks = c(1760, 1780, 1800)) +
-  #scale_y_continuous(breaks = c(0, 200, 400)) +
+  scale_x_continuous(breaks = c(1760, 1780, 1800),
+                     expand = expansion(mult = c(0, 0.02))) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
   facet_wrap(~Nationality) +
   scale_fill_identity(labels = str_to_title(color_routes$Nationality),
                          breaks = color_routes$color_route,
@@ -140,7 +111,7 @@ ggplot() +
 
 ## Duration and distance
 
-Unlike the land-bound, for sailors, the sea shore is the dangerous edge, and daily life happens on the seas, their medium of travel.
+Unlike the land-bound, for sailors, the sea shore is the dangerous edge. Daily life happens on the seas, their medium of travel.
 Considered as a whole, most voyages in this data set lasted about seven weeks. Spanish and Dutch voyages were longest on average,
 since their colonial and commercial ties were further away; French ships' destinations were mostly closer to home in the North
 Atlantic and Caribbean.
@@ -177,12 +148,12 @@ data_for_plot %>%
   geom_vline(data = national_median,
              aes(xintercept = med)
              ) +
-  scale_x_continuous(breaks = 90 * (1:8)) +
-  # scale_y_continuous(labels = label_number_si()) +
-  scale_y_continuous(labels = label_number(scale_cut = cut_short_scale())) +
+  scale_x_continuous(breaks = 90 * (1:8),
+                     expand = expansion(mult = c(0, 0.02))) +
+  scale_y_continuous(labels = label_number(scale_cut = cut_short_scale()),
+                     expand = expansion(mult = c(0, 0.02))) +
   geom_text(data = national_median,
             aes(x = med + 10, y = 5000, label = med_label), 
-            # aes(x = 300, y = 5000, label = med_label), hjust = 1
             hjust = 0
             ) +
   scale_fill_identity(labels = str_to_title(color_routes$Nationality),
@@ -205,10 +176,10 @@ data_for_plot %>%
 <br>
 
 There was great variability in the distance ships traveled in a day. In addition to differences in ships' designs and the degree to
-which their bottoms were foul with marine growth, sometimes the winds didn't blow or blew in the wrong direction. Sometimes there
+which their bottoms were fouled with marine growth, sometimes the wind didn't blow or blew in the wrong direction. Often there
 wasn't a need to put sails, spars, and masts at risk to eke out all possible speed. Sometimes there just wasn't far to go.
 
-While the wind can be capricious most anywhere, the [doldrums](https://en.wikipedia.org/wiki/Intertropical_Convergence_Zone) are
+While the wind can be capricious anywhere, the [doldrums](https://en.wikipedia.org/wiki/Intertropical_Convergence_Zone) are
 justly named: ships could drift for weeks in the heat, rolling uncomfortably and running low on fresh water.
 
 > Down dropt the breeze, the sails dropt down,<br> 'Twas sad as sad could be;<br> And we did speak only to break<br> The silence of
@@ -229,7 +200,7 @@ At other times the wind was just right, and life was easy--or at least easier.
 
 From *The Rime of the Ancient Mariner*, by Samuel Taylor Coleridge
 
-Even so, the distribution of distances traveled per day is remarkably similar:
+The distribution of distances traveled per day is remarkably similar, suggesting similar technology and sailing practices.
 
 <br>
 
@@ -268,8 +239,9 @@ data_for_plot %>%
   geom_vline(data = national_median,
              aes(xintercept = med)
              ) +
-  # scale_y_continuous(labels = label_number_si(accuracy = 1)) +
-  scale_y_continuous(labels = label_number(scale_cut = cut_short_scale())) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.02))) +
+  scale_y_continuous(labels = label_number(scale_cut = cut_short_scale()),
+                     expand = expansion(mult = c(0, 0.02))) +
   scale_fill_identity(labels = str_to_title(color_routes$Nationality),
                          breaks = color_routes$color_route,
                          guide = "legend"
@@ -284,7 +256,7 @@ data_for_plot %>%
 
 <br>
 
-Journeys of longer duration in this data set typically include gaps in the observation dates without increases in distance as seen in the plot of British ships below. These horizontal lines indicate time in port, or less likely: side trips missing in the logs. I will assume it's due to time in port.
+Journeys of longer duration in this data set typically include gaps in the observation dates without increases in distance as seen in the plot of British ships below. These horizontal lines indicate time in port, I assume.
 
 <br>
 
@@ -313,8 +285,10 @@ data_for_plot %>%
   geom_point(aes(x = days_enroute, y = cum_distance, color = color_route, group = voyage_id), 
              size = 0.1, alpha = 0.2
   ) +
-  # scale_y_continuous(labels = label_number_si(accuracy = 1)) +
-  scale_y_continuous(labels = label_number(scale_cut = cut_short_scale())) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.02))) +
+  scale_y_continuous(labels = label_number(scale_cut = cut_short_scale()),
+                     expand = expansion(mult = c(0, 0.02))
+                     ) +
   scale_color_identity(labels = str_to_title(color_routes$Nationality),
                        breaks = color_routes$color_route,
                        guide = "legend"
@@ -327,52 +301,18 @@ data_for_plot %>%
                        "\nHorizontal lines indicate time in port"),
        caption = my_caption)
 
-# Not using the following to create four plots ; this is not important enough to spend four plots on it
-# 
-# plot_distance_day_by_day<- function(nationality = NA) {
-#   
-#   p <- data_for_plot %>%
-#     filter(days_enroute < 365) %>% # should we also filter more finely than 1000 km?
-#     filter(Nationality %in% nationality) %>%
-#     ggplot() +
-#     geom_line(aes(x = days_enroute, y = cum_distance, group = voyage_id),
-#               size = 0.1, alpha = 0.9, show.legend = FALSE, color = "black"
-#     ) +
-#     geom_point(aes(x = days_enroute, y = cum_distance, color = color_route, group = voyage_id),
-#                size = 0.1, alpha = 0.2
-#     ) +
-#     scale_y_continuous(labels = label_number_si(accuracy = 1)) +
-#     scale_color_identity(labels = str_to_title(color_routes$Nationality),
-#                            breaks = color_routes$color_route,
-#                            guide = "legend"
-#                         ) +
-#     # facet_wrap(~Nationality) + #, scales = "free_y"
-#     guides(color = guide_legend(override.aes = list(size=4))) +
-#     theme(legend.position = "none") +
-#     labs(title = glue("Distance {str_to_title(nationality)} ships traveled day-by-day"),
-#          subtitle = glue("Showing less than {DURATION_CUTOFF_DAYS} days en route",
-#                          "\nHorizontal lines indicate time in port"),
-#          caption = my_caption)
-#   
-#   print(p)
-#   
-# }
-# 
-# walk(str_to_upper(sort(unique(data_for_plot$Nationality))), 
-#      plot_distance_day_by_day)
-
 ```
 
 <br>
 
-The British and Dutch ships spent proportionally longer in port. This dynamic could have been due to the need for repairs after a
+British and Dutch ships spent proportionally longer in port. This dynamic could have been due to the need for repairs after a
 trip around the South African cape, or possibly it could be a willingness to station a ship at a port for longer periods of time.
 
 <br>
 
 ```{r}
 #| label: fig-days-missing-ecdf
-#| fig-cap: "TODO: add caption"
+#| fig-cap: "Days in port during voyages"
 #| fig-height: 6
 #| fig-width: 8
 #| warning: false
@@ -399,14 +339,17 @@ data_for_plot %>%
   ggplot(aes(days_since_last_obs, color = color_route)) +
   stat_ecdf(geom = "line", pad = FALSE,
          size = 1, alpha = 0.8) +
-  scale_x_continuous(breaks = 30*(0:6), limits = c(0, CUTOFF_DAYS)) +
-  scale_y_continuous(labels = percent_format()) +
+  scale_x_continuous(breaks = 30*(0:6), 
+                     limits = c(0, CUTOFF_DAYS),
+                     expand = expansion(mult = c(0, 0.02))) +
+  scale_y_continuous(labels = percent_format(),
+                     expand = expansion(mult = c(0, 0.02))) +
   scale_color_identity(labels = str_to_title(color_routes$Nationality),
                          breaks = color_routes$color_route,
                          guide = "legend"
                       ) +
   theme(legend.position = "right") +
-  labs(title = "Times in port",
+  labs(title = "Days in port during voyages",
        y = "Cumulative pct of gaps in logs",
        subtitle = glue("{nrow(data_for_plot)} gaps in logs of a day or more",
        " ({round(100 * nrow(data_for_plot) / nrow(df_voyages), 2)}% of log entries)",
@@ -418,20 +361,85 @@ data_for_plot %>%
 
 <br>
 
+## Days between voyages
+
+At the end of a voyage ships need to be unloaded, refitted, and reprovisioned before sailing anew. Crew need to be paid off. Some need to leave (or are asked to leave), and replacements need to be found. When arriving at home port, crew want a little time with family and sweethearts. Still it doesn't seem accurate to me that the median days between voyages in this data set is 166 days (`r round(166 / 30, digits = 1)` months). Could it be that too many voyages are not included in this data set, inflating the days between voyages? Or some of the largest time gaps are actually a later ship of the same name (10000 days is `r round(10000 / 365.25, digits = 1)` years).
+
+```{r}
+#| label: fig-days-between-voyages
+#| fig-cap: "Days between voyages"
+#| fig-height: 6
+#| fig-width: 8
+#| warning: false
+
+data_for_plot <- df_voyages %>%
+  filter(is.na(days_since_last_obs)) |> # first day of voyage
+  group_by(ShipName) |>
+  arrange(ShipName, ObsDate) |>
+  mutate(days_between_voyages = as.numeric(difftime(ObsDate, lag(ObsDate, default = NA ), 
+                                         units = "days"))) |>
+  ungroup() |>
+  # not enough data for these countries to include them in the histogram
+  filter(!Nationality %in% str_to_upper(c("American", "Danish", "Hamburg", "Swedish"))) |>
+  droplevels()
+
+my_median_days <- median(data_for_plot$days_between_voyages, na.rm = TRUE)
+
+national_median <- data_for_plot %>%
+  group_by(Nationality) %>%
+  summarize(med = median(days_between_voyages, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(med_label = glue("Median days: {med}")) 
+
+data_for_plot_all <- data_for_plot |>
+  select(-Nationality)
+
+ggplot() +
+  geom_histogram(data = data_for_plot_all,
+                 aes(days_between_voyages),
+                 bins = 30,
+                 fill = "lightslategrey", alpha = 0.3) +
+  geom_histogram(data = data_for_plot,
+                 aes(days_between_voyages, fill = color_route),
+                 bins = 30,
+                 ) +
+  geom_vline(data = national_median,
+             aes(xintercept = med)
+             ) +
+  geom_vline(xintercept = my_median_days, lty = 2, linewith = 0.5, alpha = 0.5) +
+  scale_x_log10(expand = expansion(mult = c(0.01, 0.02))) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  scale_fill_identity(labels = str_to_title(color_routes$Nationality),
+                         breaks = color_routes$color_route,
+                         guide = "legend"
+                      ) +
+  facet_wrap(~Nationality, scales = "free_y") +
+  theme(legend.position = "none") +
+  labs(title = "Days between voyages",
+       subtitle = glue("Median: {round(my_median_days, 0)} days (dashed line)",
+                       "\nNote some voyages may not be in this data set"),
+       x = "days_between_voyages (log10 scale)",
+       caption = my_caption)
+
+```
+
+
 ## Countries
 
-After counting the countries of the origin and destination, I offer these observations:
+After counting the countries of the origin and destination (@fig-country-barchart), I offer these observations:
 
 -   The major colonial powers are well represented, as are locations of principal bases and colonies, the latter including India,
     Uruguay (location of Montevideo and the River Plate), South Africa (key colony and port at the Cape for British and Dutch at
     different times),
 -   Islands are of far greater importance and familiarity to sailors than to the rest of us, and there sure are a lot of them.
 
+Note that except when commissioning or decommissioning a vessel, for each ship at each port one could expect an arrival voyage followed by departure voyage. The data set is not that complete. The plot below does not distinguish between arrivals and departures.
+
 <br>
 
 ```{r}
 #| label: fig-country-barchart
-#| fig-cap: "TODO: add caption"
+#| fig-cap: "Countries: Count of mentions"
 #| fig-height: 6
 #| fig-width: 8
 
